@@ -51,7 +51,7 @@ function ask({ prompt, onData, onDone, onFail }) {
 	const handleFail = e => {
 		Toast.show(e?.data || '未知错误，请稍后重试');
 		sse.close();
-		if (typeof onFail === 'function') onFail(e.data);
+		if (typeof onFail === 'function') onFail(e?.data);
 	};
 	sse.addEventListener('message', handleMessage);
 	sse.addEventListener('done', handleDone);
