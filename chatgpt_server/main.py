@@ -4,7 +4,6 @@ from cfg import access_token, check_period, max_times
 from flask import Flask, Response, stream_with_context, request
 from flask_cors import CORS
 from time import time
-import math
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -82,6 +81,24 @@ def show_error(msg):
     return response
 
 
+def format_times(t):
+    y = t
+    d = y // 86400  # 天
+    if d > 0:
+        return f"{d}天"
+    y = t - (d * 86400)
+    h = y // 3600  # 时
+    if h > 0:
+        return f"{h}小时"
+    y = y - (h * 3600)
+    m = y // 60  # 分
+    if m > 0:
+        return f"{m}分钟"
+    y = y - (m * 60)
+    s = int(y)  # 秒
+    return f"{s}秒"
+
+
 # 额度检测
 def check_quota(did):
     now = time()
@@ -100,7 +117,9 @@ def check_quota(did):
     if last_conversation_time + check_period > now:
         # 超额
         if prompt_times >= max_times:
-            raise Exception(f"超额了～每天只能提问{max_times}次，请{math.floor(check_period / 60 / 60)}小时后再来吧~")
+            # 检测时间格式化
+            period_fmt = format_times(check_period)
+            raise Exception(f"超额了～每{period_fmt}只能提问{max_times}次，请{period_fmt}后再来吧~")
         else:
             cache_dict[did]["last_conversation_time"] = now
             cache_dict[did]["prompt_times"] += 1

@@ -1,12 +1,14 @@
 import './index.css';
 import { TextArea, Button } from 'antd-mobile';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function PromptInput({ onSubmit, loading }) {
+export default function PromptInput({ prompt, onSubmit, loading }) {
 	const [value, setValue] = useState('');
+	useEffect(() => {
+		setValue(prompt);
+	}, [prompt]);
 	function handleBtnClick() {
 		if (!loading && typeof onSubmit === 'function') onSubmit(value);
-		setValue('');
 	}
 	return (
 		<div className="PromptInput">

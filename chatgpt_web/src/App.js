@@ -46,6 +46,9 @@ function App() {
 		qaList.unshift(row);
 		setQaList(qaList);
 		insertQaRow(row);
+		setPrompt('');
+	}, () => {
+		setPrompt('');
 	});
 	const ref = createRef();
 	// 提问
@@ -85,7 +88,7 @@ function App() {
 				}
 			</div>
 			{/* 提问框 */}
-			<PromptInput loading={loading} onSubmit={handleQaSubmit}></PromptInput>
+			<PromptInput prompt={prompt} loading={loading} onSubmit={handleQaSubmit}></PromptInput>
 		</div>
 	);
 }

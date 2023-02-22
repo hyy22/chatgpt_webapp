@@ -3,7 +3,7 @@ import { Toast } from 'antd-mobile';
 import config from '../config';
 import { getDeviceId } from '../utils/device';
 
-export default function useMessage(prompt = '', onDone) {
+export default function useMessage(prompt = '', onDone, onFail) {
 	const [loading, setLoading] = useState(false);
 	const [answer, setAnswer] = useState('');
 	useEffect(() => {
@@ -19,8 +19,9 @@ export default function useMessage(prompt = '', onDone) {
 				setLoading(false);
 				if (typeof onDone === 'function') onDone(data);
 			},
-			onFail: () => {
+			onFail: e => {
 				setLoading(false);
+				if (typeof onDone === 'function') onFail(e);
 			}
 		});
 	}, [prompt]);
