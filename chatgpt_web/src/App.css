@@ -1,0 +1,13 @@
+.App {
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-top: env(safe-area-inset-top);
+}
+.QaWrapper {
+  flex: auto;
+  min-height: 0;
+  overflow-y: auto;
+}

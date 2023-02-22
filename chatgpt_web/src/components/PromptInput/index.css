@@ -1,0 +1,15 @@
+.PromptInput {
+  flex: none;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+.PromptInput-ipt {
+  flex: auto;
+  min-width: 0;
+}
+.PromptInput-btn {
+  flex: none;
+  margin-left: 10px;
+}

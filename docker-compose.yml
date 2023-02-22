@@ -1,0 +1,30 @@
+version: '3.2'
+
+services:
+  server:
+    build:
+      context: ./chatgpt_server
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - CHATGPT_ACCESS_TOKEN=必填 # chatGPT的access token，可通过https://chat.openai.com/api/auth/session获取
+      - CHATGPT_CHECK_PERIOD=86400 # 限频监测时间
+      - CHATGPT_MAX_TIMES=50 # 单次会话最大提问数
+    networks:
+      - chatgpt
+
+  web:
+    build:
+      context: ./chatgpt_web
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - 18080:80
+    networks:
+      - chatgpt
+    depends_on:
+      - server
+    
+networks:
+    chatgpt:
+      external: false
