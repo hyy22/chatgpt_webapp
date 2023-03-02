@@ -8,6 +8,7 @@ export default function useRequest() {
 	const [error, setError] = useState(null);
 	async function fetchFn({ url, params, method = 'POST' }) {
 		if (loading) return;
+		setFinish(false);
 		setLoading(true);
 		url = url.startsWith('http') ? url : `${config.baseUrl}${url}`;
 		let resp;

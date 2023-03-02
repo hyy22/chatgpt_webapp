@@ -52,7 +52,7 @@ function App() {
 	// watch
 	useEffect(() => {
 		if (!isFinishMessage) return;
-		console.log('messageError', messageError);
+		// console.log('messageError', messageError);
 		if (!messageError) {
 			const row = { q: prompt, a: parseMD(answer), id: Date.now() };
 			qaList.unshift(row);

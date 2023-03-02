@@ -15,6 +15,7 @@ export default function useMessage() {
 	// 加载方法
 	async function fetchPrompt(prompt) {
 		if (loading || !prompt.trim()) return;
+		setFinish(false);
 		setLoading(true);
 		setAnswer('');
 		ask({
