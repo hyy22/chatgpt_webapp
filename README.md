@@ -1,5 +1,7 @@
 # chatGPT网页自部署版
 
+> 2023.3.2更新，支持AI绘画
+
 ## 安装
 
 > 使用docker-compose部署，请先安装docker-compose
@@ -9,7 +11,7 @@
 git clone https://github.com/hyy22/chatgpt_webapp
 # 切换目录
 cd chatgpt_webapp
-# 修改docker-compose配置，主要填写CHATGPT_ACCESS_TOKEN，可以在https://chat.openai.com/api/auth/session获取，有效期为2周。
+# 修改docker-compose配置，主要填写CHATGPT_ACCESS_TOKEN，可以在https://chat.openai.com/api/auth/session获取，有效期为2周。OPENAI_KEY是openAI的key，在https://platform.openai.com/account/api-keys获取
 # 部署
 docker-compose up -d
 # 部署完成即可通过http://localhost:18080访问

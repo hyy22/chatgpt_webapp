@@ -11,5 +11,5 @@
 }
 .PromptInput-btn {
   flex: none;
-  margin-left: 10px;
+  margin-left: 10px !important;
 }

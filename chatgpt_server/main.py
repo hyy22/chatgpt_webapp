@@ -1,9 +1,10 @@
 import json
 from revChatGPT.V1 import Chatbot
-from cfg import access_token, check_period, max_times
+from cfg import access_token, check_period, max_times, openai_key
 from flask import Flask, Response, stream_with_context, request
 from flask_cors import CORS
 from time import time
+import openai
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -50,6 +51,33 @@ def ask():
     return response
 
 
+# 图片生成 http请求
+@app.route("/imagen", methods=["POST"])
+def imagen():
+    def format_resp(o, code=0):
+        return json.dumps({"code": code, "data": o if code == 0 else None, "message": o if code < 0 else "success"}, ensure_ascii=False)
+    prompt = request.form.get("prompt", "")
+    did = request.form.get("did", "")
+    # 参数校验
+    if prompt == "" or did == "":
+        return format_resp("参数错误", -1)
+    # 额度检测
+    try:
+        check_quota(did)
+    except Exception as err:
+        print(err)
+        return format_resp(err, -1)
+    # 设置openai key
+    openai.api_key = openai_key
+    resp = openai.Image.create(
+        prompt=prompt,
+        n=1,
+        size="512x512"
+    )
+    # print(f"resp:{resp}")
+    return format_resp(resp)
+
+
 # 问答
 def answer(prompt, did, last_conversation_id, last_parent_id):
     try:
@@ -74,6 +102,7 @@ def show_error(msg):
         yield f"event:fail\n"
         yield f"data:{msg}\r\n"
         yield "\n\n"
+
     response = Response(stream_with_context(build_msg()), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache, no-transform"
     response.headers["X-Accel-Buffering"] = "no"

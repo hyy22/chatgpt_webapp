@@ -111,6 +111,27 @@ export function removeRowsByCursor(db, storeName, { key, query }) {
 }
 
 /**
+ * 清空记录
+ * @param {IDBDatabase} db 数据库引用
+ * @param {String} storeName 表名
+ * @returns 
+ */
+export function clearRows(db, storeName) {
+	return new Promise((resolve, reject) => {
+		const objectStore = db
+			.transaction([storeName], 'readwrite')
+			.objectStore(storeName);
+		const request = objectStore.clear();
+		request.onsuccess = function () {
+			resolve(true);
+		};
+		request.onerror = function (e) {
+			reject(new Error(e.target.error.message));
+		};
+	});
+}
+
+/**
  * 更新记录
  * @param {IDBDatabase} db 数据库引用
  * @param {String} storeName 表名

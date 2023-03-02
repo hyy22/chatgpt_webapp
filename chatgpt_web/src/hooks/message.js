@@ -1,12 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Toast } from 'antd-mobile';
 import config from '../config';
 import { getDeviceId } from '../utils/device';
 
-export default function useMessage(prompt = '', onDone, onFail) {
+export default function useMessage() {
+	// 加载状态
 	const [loading, setLoading] = useState(false);
+	// 是否完成
+	const [isFinish, setFinish] = useState(false);
+	// 回答
 	const [answer, setAnswer] = useState('');
-	useEffect(() => {
+	// 错误
+	const [error, setError] = useState();
+	// 加载方法
+	async function fetchPrompt(prompt) {
 		if (loading || !prompt.trim()) return;
 		setLoading(true);
 		setAnswer('');
@@ -15,26 +22,30 @@ export default function useMessage(prompt = '', onDone, onFail) {
 			onData: data => {
 				setAnswer(data);
 			},
-			onDone: data => {
+			onDone: () => {
 				setLoading(false);
-				if (typeof onDone === 'function') onDone(data);
+				setFinish(true);
 			},
 			onFail: e => {
+				setError(e);
 				setLoading(false);
-				if (typeof onDone === 'function') onFail(e);
+				setFinish(true);
 			}
 		});
-	}, [prompt]);
+	}
 	return {
 		loading,
-		answer
+		isFinish,
+		answer,
+		error,
+		fetchPrompt,
 	};
 }
 
 // 提问
 function ask({ prompt, onData, onDone, onFail }) {
 	let resp = '';
-	const sse = new EventSource(`${config.sseBaseUrl}/ask?prompt=${encodeURIComponent(prompt)}&did=${getDeviceId()}`, { withCredentials: true });
+	const sse = new EventSource(`${config.baseUrl}/ask?prompt=${encodeURIComponent(prompt)}&did=${getDeviceId()}`, { withCredentials: true });
 	const handleMessage = e => {
 		try {
 			resp = JSON.parse(e.data).message;
@@ -50,9 +61,10 @@ function ask({ prompt, onData, onDone, onFail }) {
 		if (typeof onDone === 'function') onDone(resp);
 	};
 	const handleFail = e => {
-		Toast.show(e?.data || '未知错误，请稍后重试');
+		const errorMsg = e?.data || '未知错误，请稍后重试';
+		Toast.show(errorMsg);
 		sse.close();
-		if (typeof onFail === 'function') onFail(e?.data);
+		if (typeof onFail === 'function') onFail(errorMsg);
 	};
 	sse.addEventListener('message', handleMessage);
 	sse.addEventListener('done', handleDone);
