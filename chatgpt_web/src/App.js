@@ -70,8 +70,8 @@ function App() {
 			Toast.show(requestError?.message || requestError);
 			return;
 		}
-		const { url } = data?.data?.data?.[0] || {};
-		const row = { q: prompt, a: `<img src="${url}" loading="lazy" />`, id: Date.now() };
+		const { b64_json } = data?.data?.data?.[0] || {};
+		const row = { q: prompt, a: `<img src="data:image/png;base64,${b64_json}" loading="lazy" />`, id: Date.now() };
 		qaList.unshift(row);
 		setQaList(qaList);
 		insertQaRow(row);

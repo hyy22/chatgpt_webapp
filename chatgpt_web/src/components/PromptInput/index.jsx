@@ -8,7 +8,7 @@ export default function PromptInput({ prompt, onSubmit, loading, imgLoading }) {
 		setValue(prompt);
 	}, [prompt]);
 	function handleBtnClick(type) {
-		if (!loading && typeof onSubmit === 'function') onSubmit(value, type);
+		if (!loading && value.trim() && typeof onSubmit === 'function') onSubmit(value, type);
 	}
 	return (
 		<div className="PromptInput">
@@ -18,8 +18,8 @@ export default function PromptInput({ prompt, onSubmit, loading, imgLoading }) {
 				className="PromptInput-ipt"
 				placeholder='请输入问题'
 				autoSize></TextArea>
-			<Button loading={loading} onClick={() => handleBtnClick(1)} className='PromptInput-btn' color='primary'>提问</Button>
-			<Button loading={imgLoading} onClick={() => handleBtnClick(2)} className='PromptInput-btn'>绘画</Button>
+			<Button disabled={imgLoading} loading={loading} onClick={() => handleBtnClick(1)} className='PromptInput-btn' color='primary'>提问</Button>
+			<Button disabled={loading} loading={imgLoading} onClick={() => handleBtnClick(2)} className='PromptInput-btn'>绘画</Button>
 		</div>
 	);
 }
