@@ -1,5 +1,6 @@
 # chatGPT网页自部署版
 
+> 2023.3.6更新，更新ChatApi模型gpt-3.5-turbo
 > 2023.3.2更新，支持AI绘画
 
 ## 安装
@@ -28,7 +29,6 @@ docker-compose up -d
 
 服务端采用python+flask编写
 
-chatGPT库采用[https://github.com/acheong08/ChatGPT](https://github.com/acheong08/ChatGPT)
 
 ## 问题汇总
 
