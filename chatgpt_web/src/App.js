@@ -11,6 +11,7 @@ import hljs from 'highlight.js';
 import useRequest from './hooks/request';
 import { getDeviceId } from './utils/device';
 import { Toast } from 'antd-mobile';
+import config from './config';
 
 let db;
 const DB_NAME = 'chat_gpt_web';
@@ -54,7 +55,7 @@ function App() {
 		if (!isFinishMessage) return;
 		// console.log('messageError', messageError);
 		if (!messageError) {
-			const row = { q: prompt, a: parseMD(answer), id: Date.now() };
+			const row = { q: prompt, a: parseMD(answer), type: 'TEXT', id: Date.now() };
 			qaList.unshift(row);
 			setQaList(qaList);
 			insertQaRow(row);
@@ -71,7 +72,7 @@ function App() {
 			return;
 		}
 		const { b64_json } = data?.data?.data?.[0] || {};
-		const row = { q: prompt, a: `<img src="data:image/png;base64,${b64_json}" loading="lazy" />`, id: Date.now() };
+		const row = { q: prompt, a: `<img src="data:image/png;base64,${b64_json}" loading="lazy" />`, type: 'IMAGE', id: Date.now() };
 		qaList.unshift(row);
 		setQaList(qaList);
 		insertQaRow(row);
@@ -84,7 +85,14 @@ function App() {
 		setPrompt(val);
 		// 文本
 		if (type === 1) {
-			fetchPrompt(val);
+			let textQaList = qaList.filter(v => v.type === 'TEXT').reverse();
+			const messages = textQaList.slice(-(Math.min(config.maxMessage, textQaList.length))).reduce((prev, cur) => {
+				const { q, a } = cur;
+				prev.push({ role: 'user', content: q });
+				prev.push({ role: 'assistant', content: a.slice(0, config.maxMessageLength) });
+				return prev;
+			}, []);
+			fetchPrompt(val, messages);
 		}
 		// 绘画
 		if (type === 2) {
@@ -95,7 +103,7 @@ function App() {
 	// 获取历史数据
 	async function fetchChatHistory() {
 		if (!db) db = await openDB();
-		const rows = await findAllRows(db, 'qaList');
+		const rows = await findAllRows(db, STORE_NAME);
 		setQaList(rows.reverse());
 	}
 	// 添加记录
@@ -110,7 +118,7 @@ function App() {
 	async function clearHistoryRows() {
 		setQaList([]);
 		if (!db) db = await openDB();
-		clearRows(db, 'qaList');
+		clearRows(db, STORE_NAME);
 	}
 
 	return (
