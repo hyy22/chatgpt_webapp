@@ -1,6 +1,7 @@
 # chatGPT网页自部署版
 
-> 2023.3.6更新，更新ChatApi模型gpt-3.5-turbo
+> 2023.3.6更新，更新ChatApi模型gpt-3.5-turbo，如果不想使用chatgpt3.5 Api，可以使用dev1分支部署
+
 > 2023.3.2更新，支持AI绘画
 
 ## 安装
