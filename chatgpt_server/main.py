@@ -1,5 +1,6 @@
 import json
-from cfg import check_period, max_times, openai_key
+from revChatGPT.V1 import Chatbot
+from cfg import access_token, check_period, max_times, openai_key
 from flask import Flask, Response, stream_with_context, request
 from flask_cors import CORS
 from time import time
@@ -9,27 +10,45 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 # 初始化chatGPT
-openai.api_key = openai_key
-# 缓存did对应会话信息 上次提问时间 周期内总提问次数
+chatbot = Chatbot(config={
+    "access_token": access_token,
+})
+# 缓存did对应会话信息
 cache_dict = {}
 
 
 # 路由
-@app.route("/ask", methods=["POST"])
+@app.route("/ask")
 def ask():
-    prompt = request.json.get("prompt", "")
-    did = request.json.get("did", "")
-    messages = request.json.get("messages", [])
+    prompt = request.args.get("prompt", "")
+    did = request.args.get("did", "")
     # 参数校验
     if prompt == "" or did == "":
-        return show_error_stream("参数错误")
+        return show_error("参数错误")
     # 额度检测
     try:
         check_quota(did)
     except Exception as err:
         print(err)
-        return show_error_stream(err)
-    return build_stream_response(answer, prompt=prompt, messages=messages)
+        return show_error(err)
+    # 上下文对话
+    conversation_id = cache_dict[did]["last_conversation_id"]
+    parent_id = cache_dict[did]["last_parent_id"]
+    response = Response(
+        stream_with_context(
+            answer(
+                did=did,
+                prompt=prompt,
+                last_conversation_id=conversation_id,
+                last_parent_id=parent_id
+            )
+        ),
+        mimetype="text/event-stream"
+    )
+    response.headers["Cache-Control"] = "no-cache, no-transform"
+    response.headers["X-Accel-Buffering"] = "no"
+    response.headers["Connection"] = "keep-alive"
+    return response
 
 
 # 图片生成 http请求
@@ -37,8 +56,8 @@ def ask():
 def imagen():
     def format_resp(o, code=0):
         return json.dumps({"code": code, "data": o if code == 0 else None, "message": o if code < 0 else "success"}, ensure_ascii=False)
-    prompt = request.json.get("prompt", "")
-    did = request.json.get("did", "")
+    prompt = request.form.get("prompt", "")
+    did = request.form.get("did", "")
     # 参数校验
     if prompt == "" or did == "":
         return format_resp("参数错误", -1)
@@ -48,10 +67,12 @@ def imagen():
     except Exception as err:
         print(err)
         return format_resp(err, -1)
+    # 设置openai key
+    openai.api_key = openai_key
     resp = openai.Image.create(
         prompt=prompt,
         n=1,
-        size="512x512",
+        size="256x256",
         response_format="b64_json"
     )
     # print(f"resp:{resp}")
@@ -59,54 +80,37 @@ def imagen():
 
 
 # 问答
-def answer(prompt, messages=None):
-    if messages is None:
-        messages = []
+def answer(prompt, did, last_conversation_id, last_parent_id):
     try:
-        for data in openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                *messages,
-                {"role": "user", "content": prompt}
-            ],
-            stream=True
-        ):
-            row = data["choices"][0]
-            if "content" in row["delta"]:
-                msg = json.dumps({"text": row["delta"]["content"]}, ensure_ascii=False)
-                yield f"data:{msg}\n\n"
-            if row["finish_reason"] == "stop":
-                yield "event:done\n"
-                yield "data:\n\n"
-            elif row["finish_reason"] is not None:
-                print('finish_reason', row["finish_reason"])
-                yield "event:fail\n"
-                yield "data:ChatGPT服务内部故障\n\n"
+        for data in chatbot.ask(prompt, last_conversation_id, last_parent_id):
+            cache_dict[did]["last_conversation_id"] = data["conversation_id"]
+            cache_dict[did]["last_parent_id"] = data["parent_id"]
+            yield f"event:message\n"
+            yield f"data:{json.dumps(data, ensure_ascii=False)}\r\n"
+            yield "\n\n"
+        # print("完成！！！！！")
+        yield f"event:done\n"
+        yield f"data: \n\n"
     except Exception as err:
-        print(err)
-        yield "event:fail\n"
-        yield f"data:{err}\n\n"
+        yield f"event:fail\n"
+        yield f"data:{err}\r\n"
+        yield "\n\n"
 
 
-# 构造sse响应
-def build_stream_response(generate_fn, **kwargs):
-    response = Response(stream_with_context(generate_fn(**kwargs)), mimetype="text/event-stream")
+# 显示错误
+def show_error(msg):
+    def build_msg():
+        yield f"event:fail\n"
+        yield f"data:{msg}\r\n"
+        yield "\n\n"
+
+    response = Response(stream_with_context(build_msg()), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache, no-transform"
     response.headers["X-Accel-Buffering"] = "no"
     response.headers["Connection"] = "keep-alive"
     return response
 
 
-# 显示错误
-def show_error_stream(msg):
-    def build_error_generate():
-        yield f"event:fail\n"
-        yield f"data:{msg}\n\n"
-    return build_stream_response(build_error_generate)
-
-
-# 格式化时间描述
 def format_times(t):
     y = t
     d = y // 86400  # 天
@@ -132,6 +136,8 @@ def check_quota(did):
     # 没有会话过，添加初始值
     if did not in cache_dict:
         cache_dict[did] = {
+            "last_conversation_id": None,
+            "last_parent_id": None,
             "last_conversation_time": now,
             "prompt_times": 0
         }
@@ -149,5 +155,7 @@ def check_quota(did):
             cache_dict[did]["prompt_times"] += 1
     # 超出会话周期
     else:
+        cache_dict[did]["last_conversation_id"] = None
+        cache_dict[did]["last_parent_id"] = None
         cache_dict[did]["last_conversation_time"] = now
         cache_dict[did]["prompt_times"] = 1

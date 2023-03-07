@@ -8,8 +8,6 @@ export default function useRequest() {
 	const [error, setError] = useState(null);
 	async function fetchFn({ url, params, method = 'POST' }) {
 		if (loading) return;
-		// 重置
-		setError(null);
 		setFinish(false);
 		setLoading(true);
 		url = url.startsWith('http') ? url : `${config.baseUrl}${url}`;
@@ -20,12 +18,12 @@ export default function useRequest() {
 			if (method.toUpperCase() === 'GET') {
 				url += (url.indexOf('?') > -1 ? '&' : '?') + paramString;
 			} else {
-				postData = JSON.stringify(params);
+				postData = paramString;
 			}
 			resp = await fetch(url, {
 				method,
 				headers: {
-					'Content-Type': 'application/json',
+					'Content-Type': 'application/x-www-form-urlencoded',
 				},
 				body: postData,
 			}).then(response => response.json());
