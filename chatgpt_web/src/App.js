@@ -1,5 +1,5 @@
 import './App.css';
-import QaList from './components/QaList';
+import QaItem from './components/QaItem';
 import PromptInput from './components/PromptInput';
 import QaEmpty from './components/QaEmpty';
 import FixedButton from './components/FixedButton';
@@ -56,9 +56,11 @@ function App() {
 		// console.log('messageError', messageError);
 		if (!messageError) {
 			const row = { q: prompt, a: parseMD(answer), type: 'TEXT', id: Date.now() };
-			qaList.unshift(row);
-			setQaList(qaList);
 			insertQaRow(row);
+			qaList.unshift(row);
+			// 清空选择
+			qaList.forEach(v => v.isCheck = false);
+			setQaList(qaList);
 			// 清空提问内容
 			setPrompt('');
 		}
@@ -86,10 +88,11 @@ function App() {
 		// 文本
 		if (type === 1) {
 			let textQaList = qaList.filter(v => v.type === 'TEXT').reverse();
-			const messages = textQaList.slice(-(Math.min(config.maxMessage, textQaList.length))).reduce((prev, cur) => {
+			let textQaCheckList = textQaList.filter(v => v.isCheck); // 被勾选的qa
+			const messages = (textQaCheckList.length ? textQaCheckList : textQaList.slice(-(Math.min(config.maxMessage, textQaList.length)))).reduce((prev, cur) => {
 				const { q, a } = cur;
 				prev.push({ role: 'user', content: q });
-				prev.push({ role: 'assistant', content: a.slice(0, config.maxMessageLength) });
+				prev.push({ role: 'assistant', content: textQaCheckList.length || !config.maxMessageLength  ? a : a.slice(0, config.maxMessageLength) });
 				return prev;
 			}, []);
 			fetchPrompt(val, messages);
@@ -104,6 +107,7 @@ function App() {
 	async function fetchChatHistory() {
 		if (!db) db = await openDB();
 		const rows = await findAllRows(db, STORE_NAME);
+		rows.forEach(v => v.isCheck = false);
 		setQaList(rows.reverse());
 	}
 	// 添加记录
@@ -127,11 +131,16 @@ function App() {
 				<div className="QaWrapper" ref={ref}>
 					{/* 回复中的qa */}
 					{
-						loading && !!answer && <QaList list={[{ q: prompt, a: answer }]} />
+						loading && !!answer && <QaItem item={{ q: prompt, a: answer }} />
 					}
 					{/* 之前存在qa */}
 					{
-						qaList.length > 0 && <QaList list={qaList} loading={loading} />
+						qaList.length > 0 && qaList.map(qa => (
+							<QaItem item={qa} key={qa.id} onCheckChange={val => {
+								qa.isCheck = val;
+								setQaList([...qaList]);
+							}} />
+						))
 					}
 					{/* 空状态 */}
 					{
