@@ -11,3 +11,26 @@
   min-height: 0;
   overflow-y: auto;
 }
+/* 复制start */
+.code-wrapper {
+  position: sticky;
+  left: 0;
+  top: 0;
+}
+.copy-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ffff;
+  color: #666;
+  border: 1px solid #ccc;
+  padding: 4px;
+  border-radius: 3px;
+  opacity: 0.6;
+}
+.copy-btn:focus {
+  background-color: var(--adm-color-primary);
+  border-color: var(--adm-color-primary);
+  color: #fff;
+}
+/* 复制end */

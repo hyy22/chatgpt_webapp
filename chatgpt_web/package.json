@@ -8,6 +8,7 @@
     "@testing-library/user-event": "^13.5.0",
     "antd-mobile": "^5.28.0",
     "antd-mobile-icons": "^0.3.0",
+    "clipboard": "^2.0.11",
     "github-markdown-css": "^5.2.0",
     "highlight.js": "^11.7.0",
     "markdown-it": "^13.0.1",

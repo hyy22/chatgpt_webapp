@@ -8,6 +8,8 @@ import { initDB, findAllRows, insertRows, clearRows } from './utils/indexeddb';
 import useMessage from './hooks/message';
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
+import 'highlight.js/styles/atom-one-light.css';
+import ClipboardJS from 'clipboard';
 import useRequest from './hooks/request';
 import { getDeviceId } from './utils/device';
 import { Toast } from 'antd-mobile';
@@ -31,17 +33,30 @@ function parseMD(s) {
 		highlight: function (str, lang) {
 			if (lang && hljs.getLanguage(lang)) {
 				try {
-					return '<pre class="hljs"><code>' +
+					return '<pre class="hljs"><div class="code-wrapper"><button class="copy-btn">复制</button></div><code>' +
                  hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
                  '</code></pre>';
 				// eslint-disable-next-line no-empty
 				} catch (e) {}
 			}
-			return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+			return '<pre class="hljs"><div class="code-wrapper"><button class="copy-btn">复制</button></div><code>' + md.utils.escapeHtml(str) + '</code></pre>';
 		}
 	});
 	return md.render(s);
 }
+
+/**
+ * 初始化复制功能
+ */
+function copy() {
+	new ClipboardJS('.copy-btn', {
+		text: trigger => {
+			return trigger.closest('.hljs').querySelector('code').innerText;
+		}
+	});
+	// clipboard.destroy();
+}
+copy();
 
 function App() {
 	// 问题列表
@@ -131,7 +146,7 @@ function App() {
 				<div className="QaWrapper" ref={ref}>
 					{/* 回复中的qa */}
 					{
-						loading && !!answer && <QaItem item={{ q: prompt, a: answer }} />
+						loading && !!answer && <QaItem item={{ q: prompt, a: parseMD(answer) }} />
 					}
 					{/* 之前存在qa */}
 					{
