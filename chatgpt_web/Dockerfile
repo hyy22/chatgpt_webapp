@@ -8,7 +8,7 @@ RUN npm install --registry https://registry.npmmirror.com
 # 编译
 FROM dev-deps as build
 COPY . .
-RUN npm build
+RUN npm run build
 # 运行时
 FROM nginx
 COPY --from=build /web/nginx.conf /etc/nginx/conf.d/default.conf
